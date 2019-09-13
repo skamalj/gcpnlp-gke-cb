@@ -1,0 +1,46 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nlp
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  replicas: 1
+  selector:
+    matchLabels:
+       app: nlpapp-be
+  template:
+    metadata:
+      name: nlpapp-be
+      labels:
+        app: nlpapp-be
+    spec: 
+      containers:
+        - name: nlpapp-be
+          image: gcr.io/{{ .Values.projectid }}/nlpapp:{{ .Values.imagetag }}
+          env:
+            - name: JSON_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: ser-acc-path
+                  key: ser-acc-json-path
+          volumeMounts:
+            - name: servaccs
+              mountPath: "/var/servaccs"
+              readOnly: true
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"                
+      volumes:
+        - name: servaccs
+          secret:
+            secretName: nlpapp-ser-ac-json
+            optional: true
+            items:
+              - key: nlpapp-json
+                path: nlpapp-servacc.json
